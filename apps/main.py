@@ -1,35 +1,27 @@
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col,date_format
+from pyspark.sql.functions import avg, count, round, col, lit
 
-def init_spark():
-  sql = SparkSession.builder\
-    .appName("trip-app")\
-    .config("spark.jars", "/opt/spark-apps/postgresql-42.2.22.jar")\
-    .getOrCreate()
-  sc = sql.sparkContext
-  return sql,sc
-
-def main():
-  url = "jdbc:postgresql://demo-database:5432/mta_data"
-  properties = {
-    "user": "postgres",
-    "password": "casa1234",
-    "driver": "org.postgresql.Driver"
-  }
-  file = "/opt/spark-data/MTA_2014_08_01.csv"
-  sql,sc = init_spark()
-
-  df = sql.read.load(file,format = "csv", inferSchema="true", sep="\t", header="true"
-      ) \
-      .withColumn("report_hour",date_format(col("time_received"),"yyyy-MM-dd HH:00:00")) \
-      .withColumn("report_date",date_format(col("time_received"),"yyyy-MM-dd"))
-  
-  # Filter invalid coordinates
-  df.where("latitude <= 90 AND latitude >= -90 AND longitude <= 180 AND longitude >= -180") \
-    .where("latitude != 0.000000 OR longitude !=  0.000000 ") \
-    .write \
-    .jdbc(url=url, table="mta_reports", mode='append', properties=properties) \
-    .save()
-  
 if __name__ == '__main__':
-  main()
+    spark = SparkSession.builder.getOrCreate()
+
+    rating_df = spark.read.option("header", True).csv("data/input/ratings_sample.csv")
+    movie_df = spark.read.option("header", True).csv("data/input/movies.csv")
+
+    average_rating = rating_df.groupBy("movieId").agg(round(avg("rating"), 1).alias("average_rating"))
+    joined_df = average_rating.join(movie_df, on="movieId")
+
+    print(joined_df.show())
+    print(joined_df.printSchema())
+
+    total = average_rating.count()
+
+    # .withColumn("percentage", round(col("count_movies") / lit(total), 4)) \
+
+    move_rating_count = average_rating.groupBy("average_rating").agg(count("*").alias("count_movies")) \
+        .withColumn("percentage", col("count_movies") / lit(total)) \
+        .orderBy("average_rating", ascending=False)
+
+    print(move_rating_count.show())
+    print(move_rating_count.printSchema())
+
+    move_rating_count.repartition(1).write.mode("overwrite").csv("data/output/move_rating_count.csv")
