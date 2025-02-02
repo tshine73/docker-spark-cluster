@@ -1,35 +1,60 @@
-from pyspark.sql import SparkSession
-from pyspark.sql.functions import col,date_format
+import os
+import time
 
-def init_spark():
-  sql = SparkSession.builder\
-    .appName("trip-app")\
-    .config("spark.jars", "/opt/spark-apps/postgresql-42.2.22.jar")\
-    .getOrCreate()
-  sc = sql.sparkContext
-  return sql,sc
+import matplotlib.pyplot as plt
+import numpy as np
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import avg, count, round, col, lit
+
+WORKER_DIR = os.getenv("SPARK_WORKER_DIR", "")
+DATA_INPUT_PATH = os.path.join(WORKER_DIR, "data/input")
+DATA_OUTPUT_PATH = os.path.join(WORKER_DIR, "data/output")
+
+
+def init():
+    spark = SparkSession.builder.getOrCreate()
+    return spark
+
 
 def main():
-  url = "jdbc:postgresql://demo-database:5432/mta_data"
-  properties = {
-    "user": "postgres",
-    "password": "casa1234",
-    "driver": "org.postgresql.Driver"
-  }
-  file = "/opt/spark-data/MTA_2014_08_01.csv"
-  sql,sc = init_spark()
+    start = time.time_ns()
 
-  df = sql.read.load(file,format = "csv", inferSchema="true", sep="\t", header="true"
-      ) \
-      .withColumn("report_hour",date_format(col("time_received"),"yyyy-MM-dd HH:00:00")) \
-      .withColumn("report_date",date_format(col("time_received"),"yyyy-MM-dd"))
-  
-  # Filter invalid coordinates
-  df.where("latitude <= 90 AND latitude >= -90 AND longitude <= 180 AND longitude >= -180") \
-    .where("latitude != 0.000000 OR longitude !=  0.000000 ") \
-    .write \
-    .jdbc(url=url, table="mta_reports", mode='append', properties=properties) \
-    .save()
-  
+    spark = init()
+    ratings_file = os.path.join(DATA_INPUT_PATH, "ratings.csv")
+    movies_file = os.path.join(DATA_INPUT_PATH, "movies.csv")
+
+    rating_df = spark.read.option("header", True).csv(ratings_file)
+    movie_df = spark.read.option("header", True).csv(movies_file)
+
+    average_rating = rating_df.groupBy("movieId").agg(round(avg("rating"), 1).alias("average_rating"))
+    average_rating.show()
+
+    joined_df = average_rating.join(movie_df, on="movieId") \
+        .orderBy(col("average_rating").desc(), col("title").asc())
+    joined_df.show()
+
+    # .withColumn("percentage", concat(round((col("count_movies") / lit(total)) * 100, 2).cast("string"), lit("%"))) \
+
+    total = average_rating.count()
+    move_rating_count = average_rating.groupBy("average_rating").agg(count("*").alias("count_movies")) \
+        .withColumn("percentage", round((col("count_movies") / lit(total)) * 100, 2)) \
+        .orderBy("average_rating", ascending=False)
+    move_rating_count.show()
+
+    generate_chart(move_rating_count.toPandas())
+
+    csv_output_path = os.path.join(DATA_OUTPUT_PATH, "move_rating_count")
+    move_rating_count.repartition(10).write.mode("overwrite").csv(csv_output_path)
+
+    end = time.time_ns()
+    print(f"Execution time: {(end - start) / 1000000000} seconds")
+
+def generate_chart(df):
+    df.plot.line(x='average_rating', y='percentage', xticks=np.arange(0.5, 5, step=0.5))
+    plt.show()
+    plot_output_path = os.path.join(DATA_OUTPUT_PATH, "move_rating_count_plot.png")
+    plt.savefig(plot_output_path)
+
+
 if __name__ == '__main__':
-  main()
+    main()
