@@ -18,6 +18,7 @@ spark-worker-2|9092
 
 * dokcer version: 27.4.0 
 * spark version: 3.5.4
+* python version: 3.12.8
 
 # Installation
 
@@ -28,9 +29,14 @@ The following steps will make you run your spark cluster's containers.
 * Docker Desktop installed
 
 
-## Build the image
+# Spark Standalone mode
 
+## change directory to standalone
+```sh
+cd cluster/standalone
+```
 
+## build the image
 ```sh
 docker build -t cluster-apache-spark:3.5.4 .
 ```
@@ -66,7 +72,7 @@ http://localhost:9092/
 ![alt text](articles/images/spark-worker-2.png "Spark worker 2 UI")
 
 
-# Resource Allocation 
+## Resource Allocation 
 
 This cluster is shipped with three workers and one spark master, each of these has a particular set of resource allocation(basically RAM & cpu cores allocation).
 
@@ -80,7 +86,7 @@ This cluster is shipped with three workers and one spark master, each of these h
 
 * If you wish to modify this allocations just edit the env/spark-worker.sh file.
 
-# Bound Volumes
+## Bound Volumes
 
 To make app running easier I've shipped two volume mounts described in the following chart:
 

@@ -36,23 +36,24 @@ def main():
     # .withColumn("percentage", concat(round((col("count_movies") / lit(total)) * 100, 2).cast("string"), lit("%"))) \
 
     total = average_rating.count()
-    move_rating_count = average_rating.groupBy("average_rating").agg(count("*").alias("count_movies")) \
+    movie_rating_count = average_rating.groupBy("average_rating").agg(count("*").alias("count_movies")) \
         .withColumn("percentage", round((col("count_movies") / lit(total)) * 100, 2)) \
         .orderBy("average_rating", ascending=False)
-    move_rating_count.show()
+    movie_rating_count.show()
 
-    generate_chart(move_rating_count.toPandas())
+    generate_chart(movie_rating_count.toPandas())
 
-    csv_output_path = os.path.join(DATA_OUTPUT_PATH, "move_rating_count")
-    move_rating_count.repartition(10).write.mode("overwrite").csv(csv_output_path)
+    csv_output_path = os.path.join(DATA_OUTPUT_PATH, "movie_rating_count")
+    movie_rating_count.repartition(10).write.mode("overwrite").csv(csv_output_path)
 
     end = time.time_ns()
     print(f"Execution time: {(end - start) / 1000000000} seconds")
 
+
 def generate_chart(df):
     df.plot.line(x='average_rating', y='percentage', xticks=np.arange(0.5, 5, step=0.5))
     plt.show()
-    plot_output_path = os.path.join(DATA_OUTPUT_PATH, "move_rating_count_plot.png")
+    plot_output_path = os.path.join(WORKER_DIR, "movie_rating_count_plot.png")
     plt.savefig(plot_output_path)
 
 
