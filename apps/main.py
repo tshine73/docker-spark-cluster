@@ -33,8 +33,6 @@ def main():
         .orderBy(col("average_rating").desc(), col("title").asc())
     joined_df.show()
 
-    # .withColumn("percentage", concat(round((col("count_movies") / lit(total)) * 100, 2).cast("string"), lit("%"))) \
-
     total = average_rating.count()
     movie_rating_count = average_rating.groupBy("average_rating").agg(count("*").alias("count_movies")) \
         .withColumn("percentage", round((col("count_movies") / lit(total)) * 100, 2)) \
@@ -53,7 +51,7 @@ def main():
 def generate_chart(df):
     df.plot.line(x='average_rating', y='percentage', xticks=np.arange(0.5, 5, step=0.5))
     plt.show()
-    plot_output_path = os.path.join(WORKER_DIR, "movie_rating_count_plot.png")
+    plot_output_path = os.path.join(DATA_OUTPUT_PATH, "movie_rating_count_plot.png")
     plt.savefig(plot_output_path)
 
 
