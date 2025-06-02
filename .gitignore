@@ -1,5 +1,6 @@
 # Ignore data files
-data/
+data/input
+data/output
 .idea
 
 # Spark
