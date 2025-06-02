@@ -1,3 +1,11 @@
 # Ignore data files
 data/
 .idea
+
+# Spark
+spark-warehouse
+metastore_db
+derby.log
+
+# IPython Notebook
+.ipynb_checkpoints
