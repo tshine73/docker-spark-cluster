@@ -5,7 +5,7 @@ services:
       - "9870:9870"
       - "8088:8088"
     volumes:
-       - ../../apps:/opt/workspace/apps
+       - ../../apps/first_spark_application:/opt/workspace/apps
        - ../../data:/opt/workspace/data
     environment:
       - WORKLOAD=master
@@ -17,7 +17,7 @@ services:
     environment:
       - WORKLOAD=worker
     volumes:
-      - ../../apps:/opt/workspace/apps
+      - ../../apps/first_spark_application:/opt/workspace/apps
       - ../../data:/opt/workspace/data
   hadoop-worker-b:
     image: hadoop-cluster:3.4.1
@@ -26,5 +26,5 @@ services:
     environment:
       - WORKLOAD=worker
     volumes:
-      - ../../apps:/opt/workspace/apps
+      - ../../apps/first_spark_application:/opt/workspace/apps
       - ../../data:/opt/workspace/data

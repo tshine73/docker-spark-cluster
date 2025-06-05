@@ -1,4 +1,4 @@
-FROM openjdk:11-jre-slim-bullseye AS builder
+FROM openjdk:17-jdk-slim AS builder
 
 ENV PYTHONHASHSEED=1 \
 PYTHON_VERSION=3.12.8
@@ -22,7 +22,7 @@ RUN cd /opt && \
 
 FROM builder AS download_builder
 
-ENV SPARK_VERSION=3.5.5 \
+ENV SPARK_VERSION=3.5.6 \
 HADOOP_MAJOR_VERSION=3
 
 RUN wget --no-verbose -O apache-spark.tgz "https://dlcdn.apache.org/spark/spark-${SPARK_VERSION}/spark-${SPARK_VERSION}-bin-hadoop${HADOOP_MAJOR_VERSION}.tgz" \

@@ -22,7 +22,7 @@ RUN cd /opt && \
 
 FROM builder AS download_builder
 
-ENV SPARK_VERSION=3.5.5 \
+ENV SPARK_VERSION=3.5.6 \
 HADOOP_VERSION=3.4.1 \
 HADOOP_MAJOR_VERSION=3
 
