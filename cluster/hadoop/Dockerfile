@@ -1,8 +1,6 @@
-FROM openjdk:11-jre-slim-bullseye AS builder
+FROM openjdk:11-jre-slim-bullseye AS python_builder
 
-
-ENV PYTHONHASHSEED=1 \
-PYTHON_VERSION=3.12.8
+ENV PYTHON_VERSION=3.12.8
 
 RUN apt update -y && apt upgrade -y && apt install -y curl vim wget ssh net-tools ca-certificates build-essential gdb lcov pkg-config libbz2-dev libffi-dev libgdbm-dev libgdbm-compat-dev liblzma-dev libncurses5-dev libreadline6-dev libsqlite3-dev libssl-dev lzma lzma-dev tk-dev uuid-dev zlib1g-dev libmpdec-dev
 RUN cd /opt && \
@@ -16,11 +14,9 @@ RUN cd /opt && \
     ln -s /opt/Python-${PYTHON_VERSION}/python /usr/local/bin/python3.12 && \
     rm ../Python-${PYTHON_VERSION}.tgz && \
     python -m ensurepip --upgrade && \
-    pip3 install --upgrade setuptools && \
-    pip3 install matplotlib==3.10.0 pandas==2.2.3
+    pip3 install --upgrade setuptools
 
-
-FROM builder AS download_builder
+FROM python_builder AS download_builder
 
 ENV SPARK_VERSION=3.5.6 \
 HADOOP_VERSION=3.4.1 \
@@ -41,8 +37,11 @@ FROM download_builder AS bigdata_cluster
 
 WORKDIR /opt
 
+COPY requirements.txt ./requirements.txt
 COPY start-hadoop.sh ./
 COPY conf/* hadoop/etc/hadoop/
+
+RUN pip3 install -r /opt/requirements.txt
 
 ENV HADOOP_HOME="/opt/hadoop" \
 SPARK_HOME=/opt/spark

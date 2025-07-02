@@ -28,3 +28,9 @@ services:
     volumes:
       - ../../apps/first_spark_application:/opt/workspace/apps
       - ../../data:/opt/workspace/data
+#  jupyter-lab:
+#    image: delta-lake-tutorial:latest
+#    ports:
+#      - "8889:8888"
+#    volumes:
+#      - ../../apps/delta_lake_tutorial/spark-warehouse:/opt/spark-warehouse/

@@ -1,4 +1,4 @@
-FROM openjdk:17-jdk-slim AS builder
+FROM openjdk:17-jdk-slim AS python_builder
 
 ENV PYTHON_VERSION=3.12.8
 
@@ -18,7 +18,7 @@ RUN cd /opt && \
 
 
 
-FROM builder
+FROM python_builder
 
 COPY notebook /opt/notebook
 COPY requirements.txt /opt/requirements.txt
